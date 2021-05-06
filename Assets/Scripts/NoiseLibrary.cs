@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 
-public delegate float NoiseMethod(Vector3 point, float frequency);
+public delegate NoiseSample NoiseMethod(Vector3 point, float frequency);
 
 public enum NoiseMethodType
 {
@@ -78,7 +78,7 @@ public static class NoiseLibrary
 	};
 		
 
-	public static float Value1D(Vector3 point, float frequency)
+	public static NoiseSample Value1D(Vector3 point, float frequency)
     {
         point *= frequency;
         int i0 = Mathf.FloorToInt(point.x);
@@ -90,10 +90,17 @@ public static class NoiseLibrary
 		int h1 = hash[i1];
 
 		t = Smooth(t);
-        return Mathf.Lerp(h0, h1, t) * (1f / hashMask);
+
+		NoiseSample sample;
+		sample.value = Mathf.Lerp(h0, h1, t) * (1f / hashMask);
+		sample.derivative.x = 0f;
+		sample.derivative.y = 0f;
+		sample.derivative.z = 0f;
+		sample.derivative *= frequency;
+		return sample;
     }
 
-	public static float Value2D(Vector3 point, float frequency)
+	public static NoiseSample Value2D(Vector3 point, float frequency)
     {
 		point *= frequency;
 		int ix0 = Mathf.FloorToInt(point.x);
@@ -117,10 +124,17 @@ public static class NoiseLibrary
 		tx = Smooth(tx);
 		ty = Smooth(ty);
 
-		return Mathf.Lerp(Mathf.Lerp(h00, h10, tx), Mathf.Lerp(h01, h11, tx), ty) * (1f / hashMask);
+		NoiseSample sample;
+		sample.value = Mathf.Lerp(Mathf.Lerp(h00, h10, tx), Mathf.Lerp(h01, h11, tx), ty) * (1f / hashMask);
+		sample.derivative.x = 0f;
+		sample.derivative.y = 0f;
+		sample.derivative.z = 0f;
+		sample.derivative *= frequency;
+
+		return sample;
     }
 
-	public static float Value3D(Vector3 point, float frequency)
+	public static NoiseSample Value3D(Vector3 point, float frequency)
 	{
 		point *= frequency;
 		int ix0 = Mathf.FloorToInt(point.x);
@@ -154,10 +168,17 @@ public static class NoiseLibrary
 		tx = Smooth(tx);
 		ty = Smooth(ty);
 		tz = Smooth(tz);
-		return Mathf.Lerp(
+
+		NoiseSample sample;
+		sample.value = Mathf.Lerp(
 			Mathf.Lerp(Mathf.Lerp(h000, h100, tx), Mathf.Lerp(h010, h110, tx), ty),
 			Mathf.Lerp(Mathf.Lerp(h001, h101, tx), Mathf.Lerp(h011, h111, tx), ty),
 			tz) * (1f / hashMask);
+		sample.derivative.x = 0f;
+		sample.derivative.y = 0f;
+		sample.derivative.z = 0f;
+		sample.derivative *= frequency;
+		return sample;
 	}
 
 	public static float[] gradients1D = { 1f, -1f };
@@ -211,7 +232,7 @@ public static class NoiseLibrary
 		return g.x * x + g.y * y;
     }
 
-	public static float Perlin1D(Vector3 point, float frequency)
+	public static NoiseSample Perlin1D(Vector3 point, float frequency)
     {
 		point *= frequency;
 		int i0 = Mathf.FloorToInt(point.x);
@@ -227,10 +248,17 @@ public static class NoiseLibrary
 		float v1 = g1 * t1;
 
 		float t = Smooth(t0);
-		return Mathf.Lerp(v0, v1, t) * 2f;
-    }
 
-	public static float Perlin2D(Vector3 point, float frequency)
+		NoiseSample sample;
+		sample.value = Mathf.Lerp(v0, v1, t) * 2f;
+		sample.derivative.x = 0f;
+		sample.derivative.y = 0f;
+		sample.derivative.z = 0f;
+		sample.derivative *= frequency;
+		return sample;
+	}
+
+	public static NoiseSample Perlin2D(Vector3 point, float frequency)
     {
 		point *= frequency;
 		int ix0 = Mathf.FloorToInt(point.x);
@@ -263,10 +291,16 @@ public static class NoiseLibrary
 		float tx = Smooth(tx0);
 		float ty = Smooth(ty0);
 
-		return Mathf.Lerp(Mathf.Lerp(v00, v10, tx), Mathf.Lerp(v01, v11, tx), ty) * sqr2;
+		NoiseSample sample;
+		sample.value = Mathf.Lerp(Mathf.Lerp(v00, v10, tx), Mathf.Lerp(v01, v11, tx), ty) * sqr2;
+		sample.derivative.x = 0f;
+		sample.derivative.y = 0f;
+		sample.derivative.z = 0f;
+		sample.derivative *= frequency;
+		return sample;
 	}
 
-	public static float Perlin3D(Vector3 point, float frequency)
+	public static NoiseSample Perlin3D(Vector3 point, float frequency)
     {
 		point *= frequency;
 		int ix0 = Mathf.FloorToInt(point.x);
@@ -312,15 +346,22 @@ public static class NoiseLibrary
 		float tx = Smooth(tx0);
 		float ty = Smooth(ty0);
 		float tz = Smooth(tz0);
-		return Mathf.Lerp(
+
+		NoiseSample sample;
+		sample.value = Mathf.Lerp(
 			Mathf.Lerp(Mathf.Lerp(v000, v100, tx), Mathf.Lerp(v010, v110, tx), ty),
 			Mathf.Lerp(Mathf.Lerp(v001, v101, tx), Mathf.Lerp(v011, v111, tx), ty),
 			tz);
+		sample.derivative.x = 0f;
+		sample.derivative.y = 0f;
+		sample.derivative.z = 0f;
+		sample.derivative *= frequency;
+		return sample;
 	}
 
-	public static float Sum(NoiseMethod method, Vector3 point, float frequency, int octaves, float lacunarity, float persistence)
+	public static NoiseSample Sum(NoiseMethod method, Vector3 point, float frequency, int octaves, float lacunarity, float persistence)
 	{
-		float sum = method(point, frequency);
+		NoiseSample sum = method(point, frequency);
 		float amplitude = 1f;
 		float range = 1f;
 		for (int o = 1; o < octaves; o++)
